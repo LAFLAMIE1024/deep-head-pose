@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
+import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from torchvision import transforms
-import torch.backends.cudnn as cudnn
+
 import torchvision
 import torch.nn.functional as F
+from torchvision import transforms
 
 import datasets, hopenet, utils
 
@@ -47,6 +48,7 @@ if __name__ == '__main__':
     model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
 
     print('Loading snapshot.')
+    
     # Load snapshot
     saved_state_dict = torch.load(snapshot_path)
     model.load_state_dict(saved_state_dict)
@@ -131,18 +133,21 @@ if __name__ == '__main__':
 
         # Save first image in batch with pose cube or axis.
         if args.save_viz:
+            
             name = name[0]
+            
             if args.dataset == 'BIWI':
                 cv2_img = cv2.imread(os.path.join(args.data_dir, name + '_rgb.png'))
             else:
                 cv2_img = cv2.imread(os.path.join(args.data_dir, name + '.jpg'))
+                
             if args.batch_size == 1:
                 error_string = 'y %.2f, p %.2f, r %.2f' % (torch.sum(torch.abs(yaw_predicted - label_yaw)), torch.sum(torch.abs(pitch_predicted - label_pitch)), torch.sum(torch.abs(roll_predicted - label_roll)))
                 cv2.putText(cv2_img, error_string, (30, cv2_img.shape[0]- 30), fontFace=1, fontScale=1, color=(0,0,255), thickness=2)
+                
             # utils.plot_pose_cube(cv2_img, yaw_predicted[0], pitch_predicted[0], roll_predicted[0], size=100)
             utils.draw_axis(cv2_img, yaw_predicted[0], pitch_predicted[0], roll_predicted[0], tdx = 200, tdy= 200, size=100)
             cv2.imwrite(os.path.join('output/images', name + '.jpg'), cv2_img)
 
     print('Test error in degrees of the model on the ' + str(total) +
-    ' test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f' % (yaw_error / total,
-    pitch_error / total, roll_error / total))
+    ' test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f ' % (yaw_error / total, pitch_error / total, roll_error / total))
